@@ -1,0 +1,41 @@
+# Core ML Libraries
+torch>=2.0.0
+transformers>=4.30.0
+datasets>=2.12.0
+peft>=0.4.0  # Parameter-Efficient Fine-Tuning (LoRA)
+openai>=1.0.0  # GPT-4 API for response generation
+
+# Data Processing
+pandas>=1.5.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# UI Framework
+gradio>=3.35.0  # Original UI framework
+chainlit>=1.0.0  # Modern chat UI (recommended)
+
+# Utilities
+PyYAML>=6.0
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+textblob>=0.17.1
+
+# Testing
+pytest>=7.3.0
+pytest-cov>=4.1.0
+
+# Logging
+tensorboard>=2.13.0
+
+# Optional: For production deployment
+# flask>=2.3.0
+# gunicorn>=20.1.0
+# docker>=6.1.0
+
+# Environment fix for Windows OpenMP issues
+# Set environment variable: KMP_DUPLICATE_LIB_OK=TRUE

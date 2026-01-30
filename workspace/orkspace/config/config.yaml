@@ -1,0 +1,180 @@
+# Configuration for Emotion-Aware Mental Health Chatbot
+
+model:
+  emotion_detection:
+    model_name: "roberta-base"
+    num_labels: 6  # Hierarchical mode (6=basic, 15=grouped, 44=fine)
+    hierarchy_mode: "basic"  # Options: 'basic' (6 classes, 95% target), 'grouped' (15 classes, 87% target), 'fine' (44 classes, 70% target)
+    max_length: 256  # OPTIMIZED: Increased from 128 for better context capture
+    learning_rate: 2.0e-5  # OPTIMIZED: Reduced from 5e-5 for more stable training
+    batch_size: 16  # OPTIMIZED: Reduced from 32 for gradient accumulation (effective batch = 64)
+    epochs: 80  # Extended training for optimal convergence
+    weight_decay: 0.01
+    warmup_steps: 500  # NEW: Warmup for cosine scheduler
+    early_stopping_patience: 10  # Stop if no improvement for 10 epochs
+    early_stopping_metric: "accuracy"  # Monitor accuracy for early stopping
+    save_best_only: true
+    use_class_weights: true  # Handle class imbalance
+    label_smoothing: 0.1  # OPTIMIZED: Re-enabled from 0.0 for regularization and overlapping classes
+    use_focal_loss: false  # OPTIMIZED: Disabled from true - redundant with weighted sampling
+    focal_alpha: 0.25  # Focal loss weighting (if enabled)
+    focal_gamma: 2.0  # Balanced focus on hard examples (if enabled)
+    scheduler_type: "cosine"  # OPTIMIZED: Changed from "plateau" for smoother LR decay without getting stuck
+    scheduler_metric: "accuracy"  # Use accuracy to drive scheduler
+    scheduler_patience: 3  # Reduce LR after 3 epochs of no improvement
+    scheduler_factor: 0.5  # Reduce LR by 50% when triggered
+    gradient_clip: 1.0  # Prevent exploding gradients
+    lora_rank: 64  # NEW: Increased LoRA capacity from 32 for better fine-grained learning
+    lora_alpha: 128  # NEW: Increased LoRA alpha from 64 (2x rank)
+    lora_dropout: 0.15  # NEW: Increased LoRA dropout from 0.1 for better regularization
+    
+  response_generation:
+    model_name: "gpt2"  # Use gpt2-base for faster training (~3 hours vs ~6 hours for medium)
+    max_length: 150
+    min_length: 20
+    temperature: 0.8
+    top_k: 50
+    top_p: 0.9
+    repetition_penalty: 1.2
+    num_beams: 1
+    do_sample: true
+    epochs: 5
+    learning_rate: 5.0e-5
+    batch_size: 12  # Optimized for RTX 4070
+    gradient_accumulation_steps: 2  # Effective batch size = 24
+
+# Response Model Configuration (GPT-4o API)
+response_model:
+  gpt4_model: "gpt-4o"  # Cost: ~$0.0023 per message ($2.50 input, $10 output per 1M tokens)
+  temperature: 0.7
+  max_tokens: 150
+  top_p: 0.9
+
+data:
+  goemotions:
+    train_ratio: 0.8
+    val_ratio: 0.1
+    test_ratio: 0.1
+    stratified: true
+    multi_label_strategy: "first"  # Options: "first", "most_confident", "all"
+    
+  empathetic_dialogues:
+    max_context_length: 5
+    use_situation: true
+
+paths:
+  data_dir: "data/"
+  raw_data_dir: "data/raw/"
+  processed_data_dir: "data/processed/"
+  models_dir: "models/"
+  emotion_model_dir: "models/emotion_detection/"
+  response_model_dir: "models/response_generation/"
+  logs_dir: "logs/"
+  checkpoints_dir: "models/checkpoints_lora/"
+  visualizations_dir: "visualizations/"
+
+training:
+  device: "cuda"  # RTX 4070 GPU enabled
+  mixed_precision: true  # Enable for 30-50% speedup on RTX 4070
+  gradient_accumulation_steps: 4  # OPTIMIZED: Changed from 1 - effective batch size = 16 * 4 = 64
+  max_grad_norm: 1.0
+  seed: 42
+  num_workers: 4
+  pin_memory: true
+  logging_steps: 100
+  save_steps: 500
+  eval_steps: 500
+  # RTX 4070 optimizations
+  enable_tf32: true  # Faster training on RTX 40 series
+  cudnn_benchmark: true  # Auto-tune for best performance
+
+safety:
+  enable_crisis_detection: true
+  provide_resources: true
+  escalation_threshold: 0.8
+  crisis_keywords:
+    # Direct self-harm intentions
+    - "kill myself"
+    - "end my life"
+    - "suicide"
+    - "self-harm"
+    - "hurt myself"
+    - "harm myself"
+    - "cut myself"
+    - "overdose"
+    - "end it all"
+    - "take my life"
+    - "want to die"
+    - "wish I was dead"
+    - "better off dead"
+    - "don't want to live"
+    - "ready to die"
+    - "planning to die"
+    - "going to kill"
+    - "jump off"
+    - "hang myself"
+    - "shoot myself"
+
+    # Hopelessness and despair
+    - "give up"
+    - "no hope"
+    - "can't go on"
+    - "can't take it anymore"
+    - "nothing left"
+    - "no reason to live"
+    - "life isn't worth"
+    - "no point in living"
+    - "too much pain"
+    - "can't do this"
+    - "want it to end"
+    - "make it stop"
+
+    # Self-worth and burden
+    - "worthless"
+    - "burden to everyone"
+    - "everyone would be better"
+    - "better without me"
+    - "don't deserve to live"
+    - "waste of space"
+    - "shouldn't exist"
+    - "world without me"
+
+    # Final actions/goodbyes
+    - "final goodbye"
+    - "last time"
+    - "won't see me again"
+    - "saying goodbye"
+    - "this is it"
+  crisis_resources:
+    us: "988 (National Suicide Prevention Lifeline)"
+    us_text: "Text HOME to 741741 (Crisis Text Line)"
+    international: "https://www.iasp.info/resources/Crisis_Centres/"
+
+interface:
+  theme: "soft"
+  max_conversation_length: 50
+  show_emotion_scores: true
+  show_confidence_threshold: 0.3
+  enable_history_export: true
+  context_window: 5
+  disclaimer: |
+    ⚠️ **Important Disclaimer**: 
+    This chatbot is for research and educational purposes only.
+    This is NOT a replacement for professional mental health care.
+    In case of emergency, contact 988 (US) or your local crisis hotline.
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1"
+    - "confusion_matrix"
+  per_class_metrics: true
+  save_predictions: true
+
+logging:
+  level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"
+  console: true
+  file: true
+  tensorboard: true

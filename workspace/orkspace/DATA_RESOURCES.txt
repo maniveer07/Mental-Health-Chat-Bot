@@ -1,0 +1,269 @@
+═══════════════════════════════════════════════════════════════════════
+  DATA RESOURCES - CS 584 Final Project
+  Emotion-Aware Mental Health Chatbot
+═══════════════════════════════════════════════════════════════════════
+
+DATASETS USED IN THIS PROJECT
+─────────────────────────────────────────────────────────────────────
+
+1. GoEmotions Dataset
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Source:       Google Research
+   Link:         https://github.com/google-research/google-research/tree/master/goemotions
+   Paper:        Demszky et al. (2020), "GoEmotions: A Dataset of Fine-Grained Emotions"
+   Conference:   ACL 2020 (58th Annual Meeting of the Association for Computational Linguistics)
+   Size:         58,000 Reddit comments
+   Original:     27 fine-grained emotion labels
+   Our Use:      Mapped to 6 basic emotions (anger, fear, joy, neutral, sadness, surprise)
+   Domain:       Social media, informal language, diverse expressions
+   License:      Apache License 2.0
+   
+   Download Instructions:
+   1. Visit: https://github.com/google-research/google-research/tree/master/goemotions
+   2. Download: emotions.tsv (training + validation + test)
+   3. Format: [text, emotion_ids, comment_id]
+
+
+2. DailyDialog Dataset
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Source:       Yanran Li et al., Peking University
+   Link:         http://yanran.li/dailydialog
+   Paper:        Li et al. (2017), "DailyDialog: A Manually Labelled Multi-turn Dialogue Dataset"
+   Conference:   IJCNLP 2017 (8th International Joint Conference on Natural Language Processing)
+   Size:         13,000 multi-turn conversations (11,318 dialogues, 102,979 utterances)
+   Original:     7 emotion classes (neutral, anger, disgust, fear, happiness, sadness, surprise)
+   Our Use:      Aligned to 6 basic emotions (merged happiness→joy, removed disgust→neutral)
+   Domain:       Daily conversational scenarios (education, tourism, health)
+   License:      Research use
+   
+   Download Instructions:
+   1. Visit: http://yanran.li/dailydialog
+   2. Download: dialogues_text.zip + dialogues_emotion.zip
+   3. Format: [dialogue_id, turn_id, text, emotion_label]
+
+
+3. EmotionLines Dataset
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Source:       Academia Sinica, Taiwan
+   Link:         https://doraemon.iis.sinica.edu.tw/emotionlines/
+   Paper:        Chen et al. (2018), "EmotionLines: An Emotion Corpus of Multi-Party Conversations"
+   Conference:   LREC 2018 (11th International Conference on Language Resources and Evaluation)
+   Size:         29,000 utterances from Friends TV show scripts (1,000 dialogues)
+   Original:     7 emotion classes (neutral, joy, surprise, anger, sadness, disgust, fear)
+   Our Use:      Aligned to 6 basic emotions (same mapping as DailyDialog)
+   Domain:       Scripted conversations, rich emotional narratives
+   License:      Research use
+   
+   Download Instructions:
+   1. Visit: https://doraemon.iis.sinica.edu.tw/emotionlines/
+   2. Download: friends_train.json, friends_dev.json, friends_test.json
+   3. Format: [utterance, speaker, emotion, dialogue_id]
+
+
+═══════════════════════════════════════════════════════════════════════
+  COMBINED DATASET STATISTICS
+═══════════════════════════════════════════════════════════════════════
+
+File Location:     data/processed/multi_dataset_combined.pkl
+Total Samples:     73,380
+Emotion Classes:   6 (anger, fear, joy, neutral, sadness, surprise)
+
+Data Split:
+─────────────────────────────────────────────────────────────────────
+  Training Set:    58,704 samples (80%)
+  Validation Set:   7,338 samples (10%)
+  Test Set:         7,338 samples (10%)
+
+Class Distribution:
+─────────────────────────────────────────────────────────────────────
+  Anger:      10,100 samples (13.8%)
+  Fear:        3,150 samples (4.3%)
+  Joy:        25,280 samples (34.4%)
+  Neutral:    19,610 samples (26.7%)
+  Sadness:     9,090 samples (12.4%)
+  Surprise:    6,250 samples (8.5%)
+
+Preprocessing Steps:
+─────────────────────────────────────────────────────────────────────
+  1. Download raw datasets from links above
+  2. Text normalization: lowercase, remove URLs/mentions
+  3. Label harmonization: map 27/7 classes to unified 6-class taxonomy
+  4. Multi-label resolution: select most confident label
+  5. Remove duplicates and outliers
+  6. Apply stratified train/val/test split (80/10/10)
+  7. Tokenize with RoBERTa tokenizer (max_length=256)
+  8. Save as pickle file for efficient loading
+
+Label Mapping (27/7 → 6):
+─────────────────────────────────────────────────────────────────────
+  GoEmotions (27 classes) → 6 basic:
+    - anger, annoyance, disapproval → ANGER
+    - fear, nervousness → FEAR
+    - joy, amusement, excitement, love, gratitude, optimism → JOY
+    - neutral, confusion, curiosity, realization → NEUTRAL
+    - sadness, disappointment, grief, remorse → SADNESS
+    - surprise, admiration → SURPRISE
+    - (other classes mapped to closest basic emotion)
+
+  DailyDialog/EmotionLines (7 classes) → 6 basic:
+    - anger → ANGER
+    - fear → FEAR
+    - happiness/joy → JOY
+    - neutral → NEUTRAL
+    - sadness → SADNESS
+    - surprise → SURPRISE
+    - disgust → NEUTRAL (or ANGER for intense cases)
+
+
+═══════════════════════════════════════════════════════════════════════
+  DATA USAGE AND ATTRIBUTION
+═══════════════════════════════════════════════════════════════════════
+
+All datasets are publicly available and used in accordance with their
+respective licenses and terms of use:
+
+  ✓ GoEmotions:      Apache License 2.0 (commercial & research use allowed)
+  ✓ DailyDialog:     Research use (cite original paper)
+  ✓ EmotionLines:    Research use (cite original paper)
+
+No new human subject data was collected for this project. All data is
+from previously published datasets with appropriate ethical review.
+
+For academic use, please cite the original papers:
+
+[1] Demszky, D., Movshovitz-Attias, D., Ko, J., Cowen, A., Nemade, G.,
+    & Ravi, S. (2020). GoEmotions: A dataset of fine-grained emotions.
+    In Proceedings of ACL 2020, pp. 4040-4054.
+
+[2] Li, Y., Su, H., Shen, X., Li, W., Cao, Z., & Niu, S. (2017).
+    DailyDialog: A manually labelled multi-turn dialogue dataset.
+    In Proceedings of IJCNLP 2017, pp. 986-995.
+
+[3] Chen, S. Y., Hsu, C. C., Kuo, C. C., & Ku, L. W. (2018).
+    EmotionLines: An emotion corpus of multi-party conversations.
+    In Proceedings of LREC 2018.
+
+
+═══════════════════════════════════════════════════════════════════════
+  REPRODUCTION INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════
+
+To reproduce the preprocessed dataset from scratch:
+
+Step 1: Download raw datasets
+───────────────────────────────────────────────────────────────────────
+  mkdir -p data/raw/
+  
+  # GoEmotions
+  wget https://storage.googleapis.com/gresearch/goemotions/data/full_dataset/goemotions_1.csv -P data/raw/
+  wget https://storage.googleapis.com/gresearch/goemotions/data/full_dataset/goemotions_2.csv -P data/raw/
+  wget https://storage.googleapis.com/gresearch/goemotions/data/full_dataset/goemotions_3.csv -P data/raw/
+  
+  # DailyDialog (visit http://yanran.li/dailydialog and download manually)
+  
+  # EmotionLines (visit https://doraemon.iis.sinica.edu.tw/emotionlines/ and download manually)
+
+Step 2: Run preprocessing script
+───────────────────────────────────────────────────────────────────────
+  cd orkspace/
+  python src/data_loader_multi.py --process --output data/processed/
+
+Step 3: Verify dataset
+───────────────────────────────────────────────────────────────────────
+  python -c "
+  import pickle
+  with open('data/processed/multi_dataset_combined.pkl', 'rb') as f:
+      data = pickle.load(f)
+  print(f'Total samples: {len(data["train"])}')
+  print(f'Emotion classes: {data["label_map"]}')
+  "
+
+Expected Output:
+  Total samples: 73380
+  Emotion classes: {'anger': 0, 'fear': 1, 'joy': 2, 'neutral': 3, 'sadness': 4, 'surprise': 5}
+
+
+═══════════════════════════════════════════════════════════════════════
+  PRE-PROCESSED DATASET INCLUDED
+═══════════════════════════════════════════════════════════════════════
+
+For convenience, the fully preprocessed dataset is included in this
+submission:
+
+  File:         data/processed/multi_dataset_combined.pkl
+  Format:       Python pickle (dict)
+  Size:         ~40 MB
+  Encoding:     RoBERTa tokenizer (roberta-base)
+  Max Length:   256 tokens
+
+Contents:
+  {
+    'train': {
+      'texts': List[str],           # Raw text samples
+      'labels': List[int],          # Emotion labels (0-5)
+      'input_ids': List[List[int]], # RoBERTa token IDs
+      'attention_mask': List[List[int]]
+    },
+    'val': {...},   # Same structure
+    'test': {...},  # Same structure
+    'label_map': Dict[str, int],  # Emotion name → ID
+    'id_to_label': Dict[int, str], # ID → Emotion name
+    'class_weights': List[float]   # For handling class imbalance
+  }
+
+To load and use:
+  import pickle
+  
+  with open('data/processed/multi_dataset_combined.pkl', 'rb') as f:
+      data = pickle.load(f)
+  
+  train_texts = data['train']['texts']
+  train_labels = data['train']['labels']
+  label_map = data['label_map']  # {'anger': 0, 'fear': 1, ...}
+
+
+═══════════════════════════════════════════════════════════════════════
+  ADDITIONAL RESOURCES
+═══════════════════════════════════════════════════════════════════════
+
+Model Checkpoints:
+  Location:     models/checkpoints_lora/best_model/
+  Contents:     LoRA adapters, tokenizer, training state
+  Performance:  76% test accuracy, 75.5% weighted F1-score
+
+Training History:
+  Location:     models/checkpoints_lora/training_history.json
+  Contents:     Loss, accuracy, F1-score, learning rate per epoch
+
+Classification Report:
+  Location:     models/checkpoints_lora/test_classification_report.txt
+  Contents:     Per-class precision, recall, F1-score, support
+
+Visualizations:
+  Location:     visualizations/
+  Files:        training_curves.png, test_confusion_matrix.png, test_per_class_f1.png
+
+
+═══════════════════════════════════════════════════════════════════════
+  CONTACT INFORMATION
+═══════════════════════════════════════════════════════════════════════
+
+For questions about data processing or reproduction:
+  - Check: README.md (section 4: Data Preparation)
+  - Check: src/data_loader_multi.py (preprocessing code)
+  - Check: config/config.yaml (data configuration)
+
+For dataset access issues:
+  - GoEmotions: https://github.com/google-research/google-research/tree/master/goemotions
+  - DailyDialog: Contact authors at http://yanran.li/dailydialog
+  - EmotionLines: https://doraemon.iis.sinica.edu.tw/emotionlines/
+
+
+═══════════════════════════════════════════════════════════════════════
+
+Last Updated: December 12, 2025
+Project: CS 584 Final Project - Emotion-Aware Mental Health Chatbot
+Student: [samanth mani veer yedhupati, Hruthik lokesh puppala]
+
+═══════════════════════════════════════════════════════════════════════
+

@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environment variables
+.env
+.env.local
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Model files (too large for GitHub)
+*.pth
+*.pt
+*.pkl
+
+# Data files
+*.csv
+workspace/orkspace/data/
+
+# Logs
+*.log
+workspace/orkspace/logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
