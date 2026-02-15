@@ -1,0 +1,125 @@
+\documentclass[conference]{IEEEtran}
+
+% CHASE 2026 (review stage): IEEE conference format, double column, double blind.
+% Toggle review/camera-ready mode here.
+\newif\ifreview
+\reviewtrue % set \reviewfalse for camera-ready
+
+\usepackage[T1]{fontenc}
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xurl}
+
+\begin{document}
+
+\title{Emotion-Aware Mental Health Chatbot with LoRA-Based Emotion Detection and Integrated Safety Controls}
+
+\ifreview
+\author{
+  \IEEEauthorblockN{Anonymous Author(s)}
+  \IEEEauthorblockA{Submitted for double-blind review to IEEE/ACM CHASE 2026}
+}
+\else
+% \author{
+%   \IEEEauthorblockN{First Author\IEEEauthorrefmark{1}, Second Author\IEEEauthorrefmark{2}}
+%   \IEEEauthorblockA{\IEEEauthorrefmark{1}Affiliation, City, Country\\ email@domain}
+%   \IEEEauthorblockA{\IEEEauthorrefmark{2}Affiliation, City, Country\\ email@domain}
+% }
+\author{\IEEEauthorblockN{TBD}\IEEEauthorblockA{TBD}}
+\fi
+
+\maketitle
+
+\begin{abstract}
+Conversational agents are increasingly used to provide mental-health support, but practical systems must balance empathy with safety: they should recognize user affect, avoid diagnosis or medical advice, detect crisis language, and route users to appropriate resources. We present an emotion-aware mental-health chatbot that integrates (i) a RoBERTa-based emotion classifier fine-tuned with parameter-efficient LoRA adapters for six basic emotions and (ii) a safety module that combines keyword-based crisis detection, sentiment analysis, and conversation-history signals to trigger resource provision and response validation. The system generates responses via an emotion-conditioned prompt to a large language model API with a local dialogue-model fallback, and exposes all components through an interactive Chainlit interface. On an internal held-out test set of 7{,}338 samples, the emotion classifier achieves 0.76 accuracy and 0.76 weighted F1. We discuss limitations, safety considerations, and directions for evaluation in realistic, high-stakes settings.
+\end{abstract}
+
+\begin{IEEEkeywords}
+connected health, mental-health chatbot, emotion recognition, safety, crisis detection, parameter-efficient fine-tuning, LoRA
+\end{IEEEkeywords}
+
+\section{Introduction}
+Mental-health support tools are often accessed in moments of distress where latency, stigma, and availability constrain traditional care. Conversational agents can reduce barriers by offering immediate, low-friction support, but any real deployment must be careful: the agent should \emph{not} diagnose or prescribe, should avoid harmful or invalidating language, and should recognize crisis risk to provide resources.
+
+We describe an end-to-end system that combines affect recognition with explicit safety controls. The design goal is not to replace professional care, but to provide supportive dialogue while enforcing conservative safety policies.
+
+\textbf{Contributions:} (1) a modular pipeline that couples emotion detection, risk assessment, response generation, and response validation; (2) a parameter-efficient emotion model based on RoBERTa~\cite{liu2019roberta} adapted with LoRA~\cite{hu2021lora}; (3) an implementable safety module that triggers crisis resources and filters harmful content; and (4) an interactive interface that surfaces emotion confidence and safety interventions to users.
+
+\section{Related Work}
+Emotion recognition from text has benefited from large pre-trained transformers and datasets such as GoEmotions~\cite{demszky2020goemotions}. Emotion-aware dialogue has been explored using empathetic conversation data such as EmpatheticDialogues~\cite{rashkin-etal-2019-towards} and multi-turn corpora like DailyDialog~\cite{li2017dailydialog}. For efficient adaptation of transformer backbones, parameter-efficient fine-tuning methods such as LoRA~\cite{hu2021lora} reduce trainable parameters while retaining performance.
+
+Safety for mental-health chatbots has motivated approaches including crisis keyword detection, conservative refusals, and resource provision; our work implements these controls as a first-class module and validates generated responses via pattern and sentiment checks.
+
+\section{System Overview}
+The chatbot processes each user message with a four-stage pipeline:
+\begin{enumerate}
+  \item \textbf{Emotion detection:} classify the message into one of six emotions (anger, fear, joy, neutral, sadness, surprise) with confidence.
+  \item \textbf{Safety and risk assessment:} detect crisis keywords (tiered severity), incorporate sentiment and short history signals to compute an overall risk score, and decide whether to provide crisis resources.
+  \item \textbf{Response generation:} generate an empathetic response conditioned on the detected emotion using a large language model API, with an offline dialogue model fallback.
+  \item \textbf{Response validation:} reject unsafe, too-short, overly negative, or medically inappropriate responses and replace them with a safe fallback prompt.
+\end{enumerate}
+The system is exposed via a Chainlit web UI that displays detected emotion, confidence, and a simple visualization of top emotion probabilities.
+
+\section{Emotion Detection Model}
+\subsection{Data}
+Training uses a combined dataset built from publicly available resources: GoEmotions~\cite{demszky2020goemotions}, a Twitter-based 6-class emotion dataset derived from CARER~\cite{saravia-etal-2018-carer}, EmpatheticDialogues~\cite{rashkin-etal-2019-towards}, and DailyDialog~\cite{li2017dailydialog}. Labels are mapped to a basic 6-class taxonomy for deployment.
+
+\subsection{Architecture and Adaptation}
+We use \texttt{roberta-base} as the backbone~\cite{liu2019roberta} and apply LoRA adapters~\cite{hu2021lora} to attention and projection modules (\texttt{query}, \texttt{key}, \texttt{value}, \texttt{dense}). The released adapter configuration sets \(r=64\), \(\alpha=128\), and dropout \(=0.15\), saving the classifier head for task-specific weights.
+
+\subsection{Training}
+Inputs are tokenized to a maximum length of 256 tokens. To mitigate class imbalance, training uses weighted sampling; regularization includes label smoothing (0.1). Optimization uses AdamW with cosine learning-rate scheduling and early stopping based on validation accuracy. Mixed precision is enabled when available.
+
+\section{Safety Module}
+The safety module performs (i) tiered crisis keyword matching (high/medium/low) to flag messages indicating self-harm or acute risk; (ii) sentiment scoring (TextBlob polarity) to model negative affect; (iii) short-window history checks to detect repeated crisis signals; and (iv) response validation that filters harmful patterns, discourages medical advice, and enforces minimum response length. When risk is high or a crisis pattern is detected, the system responds with crisis resources and encourages professional help.
+
+\section{Response Generation}
+In the primary mode, responses are generated via a large language model API using a structured prompt that (1) explicitly includes the detected emotion, (2) requests reflective listening and validation, (3) forbids diagnosis and medical advice, and (4) enforces concise responses (2--3 sentences). If the API is unavailable, the system falls back to a local DialoGPT-medium model conditioned with an emotion token prefix and limited history.
+
+\section{Evaluation}
+We report results for the emotion detection component, measured on a held-out test set of 7{,}338 samples.
+
+\begin{table}[t]
+  \caption{Emotion classification performance on the test set (6 classes).}
+  \label{tab:emotion-metrics}
+  \centering
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+    \midrule
+    Anger    & 0.66 & 0.66 & 0.66 \\
+    Fear     & 0.74 & 0.92 & 0.82 \\
+    Joy      & 0.87 & 0.87 & 0.87 \\
+    Neutral  & 0.72 & 0.60 & 0.65 \\
+    Sadness  & 0.77 & 0.88 & 0.82 \\
+    Surprise & 0.56 & 0.71 & 0.62 \\
+    \midrule
+    \textbf{Overall} & \multicolumn{3}{c}{Accuracy 0.76; Weighted F1 0.76; Macro F1 0.74} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The classifier is strongest for \emph{joy} and \emph{fear}, and weaker for \emph{surprise} and \emph{neutral}. In safety-critical settings, we recommend using the confidence score to drive conservative fallbacks (e.g., neutral supportive prompts) and to inform downstream risk logic.
+
+\section{Discussion and Limitations}
+The current evaluation focuses on emotion classification; end-to-end conversational quality and safety require additional study. First, keyword-based crisis detection may miss implicit risk or produce false positives; hybrid approaches (learned classifiers, clinician-designed rules) are needed. Second, reliance on an external LLM API introduces non-determinism and policy drift; robust response validation and logging are essential. Third, datasets used for emotion supervision may not represent clinical language or diverse populations, limiting generalization.
+
+\section{Ethics and Safety Considerations}
+This system is for research and educational use and is not a substitute for professional care. The agent is explicitly instructed not to diagnose or prescribe; it provides crisis resources when high-risk content is detected. Any deployment should include human oversight, transparent disclosures, and careful evaluation of harms such as over-reliance, unsafe advice, or privacy leakage. Since mental-health interactions can involve human subjects considerations, future evaluations should follow appropriate IRB/ethics review and informed consent procedures.
+
+\section{Conclusion}
+We presented an emotion-aware mental-health chatbot that integrates a LoRA-adapted RoBERTa emotion classifier with a modular safety layer and emotion-conditioned response generation. The emotion detector achieves 0.76 accuracy and 0.76 weighted F1 on a held-out test set. Future work will evaluate end-to-end safety and utility with structured protocols, strengthen crisis detection beyond keywords, and study fairness and calibration across user subgroups.
+
+\ifreview
+% No acknowledgments in double-blind review.
+\else
+% \section*{Acknowledgment}
+% TBD.
+\fi
+
+\bibliographystyle{IEEEtran}
+\bibliography{CHASE2026_refs}
+
+\end{document}
+
