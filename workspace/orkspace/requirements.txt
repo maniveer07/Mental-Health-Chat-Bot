@@ -2,6 +2,7 @@
 torch>=2.0.0
 transformers>=4.30.0
 datasets>=2.12.0
+huggingface_hub[hf_xet]>=0.24.0  # Optional acceleration for HF "Xet Storage" downloads
 peft>=0.4.0  # Parameter-Efficient Fine-Tuning (LoRA)
 openai>=1.0.0  # GPT-4 API for response generation
 
